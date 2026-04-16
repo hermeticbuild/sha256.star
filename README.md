@@ -25,7 +25,7 @@ hash = sha256("hello")
 For Bazel, add the dependency to your `MODULE.bazel`:
 
 ```starlark
-bazel_dep(name = "sha256.star", version = "...")
+bazel_dep(name = "sha256.bzl", version = "...")
 ```
 
 ### In standalone Starlark
