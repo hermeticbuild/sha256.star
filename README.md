@@ -1,92 +1,138 @@
 # sha256.star
 
-A repository for computing SHA-256 hashes in Bazel, hermetically.
+A pure [Starlark](https://github.com/bazelbuild/starlark) implementation of SHA-256.
 
-Because modern computing depends, to a frankly unreasonable degree, on taking some bytes, hashing them, and then treating the resulting 64 hex characters as a statement of objective truth.
+No native extensions, no host calls. The single file `sha256.star`
+(symlinked as `sha256.bzl`) can be
+`load()`-ed from any Bazel rule, or used with a standalone Starlark interpreter.
 
-## Why SHA-256 Matters
+The goal is **correctness**, not speed. A pure Starlark implementation will
+always be orders of magnitude slower than vectorized native code. It targets
+small inputs such as those hashed in a Bazel module extension to generate
+lockfiles.
 
-SHA-256 is everywhere.
+## Usage
 
-It is used to:
+### In a Bazel or Buck2 rule (`*.bzl`)
 
-- identify files and artifacts
-- verify downloads
-- support content-addressed storage
-- drive caches and build systems
-- confirm that some bytes are, in fact, still those bytes
+```starlark
+load("@sha256.bzl", "sha256")
 
-A lot of modern infrastructure works only because everyone agrees that, given the same input, a hash must always produce the same output.
+hash = sha256("hello")
+# "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+```
 
-This is a good system, and certainly not a fragile social contract holding civilization together.
+For Bazel, add the dependency to your `MODULE.bazel`:
 
-## Why Hermeticity Matters
+```starlark
+bazel_dep(name = "sha256.star", version = "...")
+```
 
-A SHA-256 pipeline that is not hermetic is just a checksum with ambitions.
+### In standalone Starlark
 
-If hashing depends on:
+```starlark
+load("sha256.star", "sha256")
 
-- whatever tools happen to be installed on the host
-- platform-specific command behavior
-- shell quirks
-- locale, line endings, or other ambient nonsense
+print(sha256("hello"))
+```
 
-then it is no longer a dependable build primitive. It is a situation.
+### Interactive interpreter
 
-For something this fundamental, “seems fine on my machine” is not really the bar.
+A bundled interpreter reads from stdin with `sha256()` pre-loaded:
 
-This repository exists to make SHA-256 computation explicit, reproducible, and independent of host-level weirdness.
+```sh
+echo 'print(sha256("hello"))' | bazel run //interpreter
+```
 
-## What This Repo Is About
+```sh
+bazel run //interpreter < myscript.star
+```
 
-`sha256.star` provides Bazel-oriented SHA-256 functionality for cases where reproducibility actually matters.
+### sha256sum
 
-The core idea is simple:
+A `sha256sum` replacement that computes hashes entirely in
+Starlark:
 
-> given the same bytes, produce the same digest, every time, everywhere.
+```sh
+echo -n hello | bazel run //interpreter:sha256sum
+# 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824  -
+```
 
-Which is what a hash is supposed to do, and yet here we are having to make a whole repository about it.
+## API
 
-## Design Principles
+```starlark
+sha256(input, *, encoding = "auto", output = "hex", raw = False)
+```
 
-### Reproducibility
+### Parameters
 
-Same input, same output.
+| Parameter  | Type   | Default  | Description |
+|------------|--------|----------|-------------|
+| `input`    | string or iterable of int | *(required)* | Data to hash. |
+| `encoding` | string | `"auto"` | How to interpret `input` (keyword-only). |
+| `output`   | string | `"hex"`  | Output format (keyword-only). |
+| `raw`      | bool   | `False`  | Stream mode (keyword-only). When `True`, `input` is iterated directly as byte values without materializing the full input in memory. The caller must ensure all elements are ints in 0x00–0xFF. |
 
-Missing this would be embarrassing.
+### Input encoding
 
-### Hermeticity
+| `encoding` | Behavior |
+|------------|----------|
+| `"auto"`   | Strings are treated as raw bytes (each codepoint must be 0x00–0xFF). Iterables are treated as lists of byte-valued ints. |
+| `"hex"`    | Input must be a string of hexadecimal characters (e.g. `"48656c6c6f"`). Upper and lower case are accepted. Length must be even. |
 
-Hashing should depend only on declared inputs, not on whatever your laptop has been through.
+### Output format
 
-### Portability
+| `output`  | Return type | Example |
+|-----------|-------------|---------|
+| `"hex"`   | `string`    | `"ba7816bf8f01cfea..."` (64 lowercase hex chars) |
+| `"int"`   | `int`       | `84342368487090800...` (256-bit integer) |
+| `"sri"`   | `string`    | `"sha256-ungWv48Bz+pBQU..."` (SRI hash) |
+| `"byte_list"` | `list[int]` | `[186, 120, 22, 191, ...]` (32 ints, 0–255) |
 
-Behavior should be consistent across local builds, remote execution, and different operating systems.
+### Examples
 
-### Bazel-friendliness
+```starlark
+# Raw string input (default)
+sha256("abc")
+# "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
 
-This should behave like a proper part of the build graph, not a shell command that happened to work once.
+# Byte list input
+sha256([0x48, 0x65, 0x6c, 0x6c, 0x6f])
+# "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969"
 
-## Why Not Just Use `sha256sum`?
+# Hex-encoded input
+sha256("deadbeef", encoding = "hex")
 
-Sometimes you can.
+# SRI output (for Bazel's integrity attributes)
+sha256("hello", output = "sri")
+# "sha256-LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ="
 
-But if you want reliable behavior across platforms and environments, ambient host tools start looking less like infrastructure and more like folklore.
+# Raw byte list output
+sha256("abc", output = "byte_list")
+# [186, 120, 22, 191, 143, 1, 207, 234, ...]
 
-At that point, hashing is part of the build, and it should be treated that way.
+# Streaming mode: hash an iterable without materializing it in memory
+sha256(my_byte_iterator, raw = True)
+```
 
-## Goal
+## Testing
 
-Compute SHA-256 in a way that is:
+```sh
+bazel test //tests/...
+bazel build //example
+buck2 build //example
+```
 
-- correct
-- reproducible
-- hermetic
-- usable from Bazel
-- boring in the best possible way
+The test suite is a battery of input–output pairs: each
+`tests/testdata/<name>.star` file runs with `sha256` pre-loaded and its output
+is compared against `tests/testdata/<name>.expected`. Add a test by dropping a new
+`.star`/`.expected` pair into `tests/testdata/`.
 
-## Closing Note
+The suite includes 129 official NIST CAVS byte-oriented test vectors
+(`SHA256ShortMsg` and `SHA256LongMsg`) in addition to edge-case and
+format-specific tests.
 
-A surprising amount of software infrastructure depends on being able to say, with complete confidence, that some bytes are exactly the bytes we think they are.
-
-`sha256.star` is for doing that hermetically, which is important, because non-hermetic hashing would be ridiculous.
+We test against three Starlark implementations:
+- [Bazel](https://github.com/bazelbuild/bazel/blob/master/src/main/java/net/starlark/java/cmd/Main.java)
+- [starlark-go](https://github.com/google/starlark-go)
+- [starlark-rust](https://github.com/facebook/starlark-rust)

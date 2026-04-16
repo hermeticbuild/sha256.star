@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "sha256_test",
+    srcs = ["sha256_test.go"],
+    args = ["-test.v"],
+    data = [
+        "//:sha256.star",
+        "//tests:testdata",
+    ],
+    deps = ["@net_starlark_go//starlark"],
+)

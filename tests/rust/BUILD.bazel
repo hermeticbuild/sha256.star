@@ -1,0 +1,22 @@
+load("@bazel_skylib//rules:native_binary.bzl", "native_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "sha256_test_bin",
+    testonly = True,
+    srcs = ["sha256_test.rs"],
+    data = [
+        "//:sha256.star",
+        "//tests:testdata",
+    ],
+    deps = [
+        "@crates//:anyhow",
+        "@crates//:starlark",
+    ],
+)
+
+native_test(
+    name = "sha256_test",
+    size = "medium",
+    src = ":sha256_test_bin",
+)

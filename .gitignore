@@ -1,0 +1,4 @@
+bazel-*
+/resources/
+MODULE.bazel.lock
+/buck-out

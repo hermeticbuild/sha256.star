@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_test")
+
+java_test(
+    name = "sha256_test",
+    srcs = ["Sha256Test.java"],
+    data = [
+        "//:sha256.star",
+        "//tests:testdata",
+    ],
+    main_class = "tests.java.Sha256Test",
+    use_testrunner = False,
+    deps = [
+        "@rules_java//java/runfiles",
+        "@starlark_deploy//jar",
+    ],
+)
