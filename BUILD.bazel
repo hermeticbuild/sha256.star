@@ -1,0 +1,15 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+exports_files(
+    srcs = [
+        "sha256.bzl",
+        "sha256.star",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "sha256",
+    srcs = ["sha256.bzl"],
+    visibility = ["//visibility:public"],
+)

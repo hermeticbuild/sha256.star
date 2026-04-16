@@ -1,0 +1,44 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+java_library(
+    name = "builtins",
+    srcs = [
+        "ByteIterable.java",
+        "OpenBytesBuiltin.java",
+    ],
+    deps = ["@starlark_deploy//jar"],
+)
+
+java_binary(
+    name = "interpreter",
+    srcs = ["Interpreter.java"],
+    data = ["//:sha256.star"],
+    main_class = "interpreter.Interpreter",
+    deps = [
+        "@rules_java//java/runfiles",
+        "@starlark_deploy//jar",
+    ],
+)
+
+java_binary(
+    name = "sha256sum",
+    srcs = ["Sha256sum.java"],
+    data = ["//:sha256.star"],
+    main_class = "interpreter.Sha256sum",
+    deps = [
+        ":builtins",
+        "@rules_java//java/runfiles",
+        "@starlark_deploy//jar",
+    ],
+)
+
+java_binary(
+    name = "repl",
+    srcs = ["Repl.java"],
+    data = ["//:sha256.star"],
+    main_class = "interpreter.Repl",
+    deps = [
+        "@rules_java//java/runfiles",
+        "@starlark_deploy//jar",
+    ],
+)

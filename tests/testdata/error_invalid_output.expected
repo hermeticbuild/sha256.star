@@ -1,0 +1,1 @@
+ERROR: sha256: output must be 'hex', 'int', 'sri', or 'byte_list'

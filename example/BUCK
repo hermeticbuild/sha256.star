@@ -1,0 +1,7 @@
+load("//:sha256.bzl", "sha256")
+
+write_file(
+    name = "example",
+    content = [sha256("Hello, world!")],
+    out = "input_file.sha256",
+)
