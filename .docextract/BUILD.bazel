@@ -1,0 +1,4 @@
+starlark_doc_extract(
+    name = "doc_extract",
+    src = "//:sha256.bzl",
+)

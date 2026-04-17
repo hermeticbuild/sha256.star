@@ -1,0 +1,6 @@
+{
+  "integrity": "**leave this alone**",
+  "strip_prefix": "{REPO}-{VERSION}",
+  "url": "https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/sha256.bzl-{TAG}.tar.gz",
+  "docs_url": "https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/sha256.bzl-{TAG}.docs.tar.gz"
+}

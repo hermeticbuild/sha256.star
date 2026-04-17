@@ -1,0 +1,3 @@
+# Exclude test/dev directories from release archives
+tests export-ignore
+interpreter export-ignore

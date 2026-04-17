@@ -1,1 +1,2 @@
 test --test_summary=detailed --test_output=errors
+build --java_runtime_version=remotejdk_21
