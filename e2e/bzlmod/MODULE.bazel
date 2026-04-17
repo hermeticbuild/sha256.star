@@ -1,0 +1,9 @@
+module(name = "sha256_e2e")
+
+bazel_dep(name = "sha256.bzl")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+
+local_path_override(
+    module_name = "sha256.bzl",
+    path = "../../"
+)

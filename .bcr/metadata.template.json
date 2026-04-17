@@ -1,0 +1,15 @@
+{
+  "homepage": "https://github.com/hermeticbuild/sha256.star",
+  "maintainers": [
+    {
+      "name": "Malte Poll",
+      "email": "1780588+malt3@users.noreply.github.com",
+      "github": "malt3"
+    }
+  ],
+  "repository": [
+    "github:hermeticbuild/sha256.star"
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}
